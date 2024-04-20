@@ -16,25 +16,24 @@ int reading2;           // the current reading from the input pin
 int previous2;    // the previous reading from the input pin
 
 int record = 1;
-int overdub = 2;
-int play = 3;
-int stp = 4;
+int play = 2;
+int stop = 3;
 
-int button1 = record;
-int button2 = play;
+int status = stop;
+
 
 
 // the follow variables are long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
 long time = 0;         // the last time the output pin was toggled
-long debounce = 200;   // the debounce time, increase if the output flickers
+long debounce = 100;   // the debounce time, increase if the output flickers
 
 void setup()
 {
 //  Serial.begin(9600); // setup serial for MIDI
   Serial.begin(31250); // setup serial for MIDI
 
-//  Serial.println("start");
+  Serial.println("start");
    
   pinMode(inPin1, INPUT);
   pinMode(inPin2, INPUT);
@@ -54,18 +53,17 @@ void loop()
   // the time
   if (reading1 != previous1 && millis() - time > debounce) {
 
-    if(button1 == record) {
- //     Serial.println("Send Record, [Dub, Play]");
-      midiOut.sendControlChange(60,127,1); 
+    if(status == stop || status == play) {
+      Serial.println("Send Record/Overdub");
+      midiOut.sendControlChange(63,0,1); 
      
-      button1 = overdub;
-      button2 = play;
+      status = record;
+      
     }
     else {
-      //Serial.println("Send Overdub, [Dub, Stop]");
-      midiOut.sendControlChange(60,0,1); 
-      button1 = overdub;
-      button2 = stp;
+      Serial.println("Send Play");
+      midiOut.sendControlChange(64,127,1); 
+      status = play;
     }
     
     time = millis();
@@ -73,21 +71,11 @@ void loop()
   }
  
   if (reading2 != previous2 && millis() - time > debounce) {
-    
-    if(button2 == play) {
-        //Serial.println("Send Play, [Dub, Stop]");
-        midiOut.sendControlChange(61,127,1); 
+         
+    Serial.println("Send Stop");
+    midiOut.sendControlChange(64,0,1); 
 
-        button1 = overdub;
-        button2 = stp;
-    }
-    else {
-      //Serial.println("Send Stop, [Record, Play]");
-      midiOut.sendControlChange(61,0,1); 
-      button1 = record;
-      button2 = play;
-    }
-
+    status = stop;
     time = millis();
     previous2 = reading2;    
   }
